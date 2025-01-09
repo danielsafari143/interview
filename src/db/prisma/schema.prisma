@@ -1,0 +1,58 @@
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+generator client {
+    provider        = "prisma-client-js"
+    previewFeatures = ["prismaSchemaFolder"]
+}
+
+model User {
+    id        String   @id @default(cuid()) @db.VarChar(30)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    name      String   @db.Char(30)
+    type      String
+    email     String   @unique @db.Char(30)
+
+    hostedMeetings Meetings[]     @relation("Host")
+    guestMeetings  Meetings[]     @relation("Guest")
+    availabilities Availability[]
+
+    @@index([email])
+    @@map("users")
+}
+
+model Meetings {
+    id       String   @id @default(cuid()) @db.VarChar(30)
+    date     DateTime
+    duration Int
+
+    host        User    @relation("Host", fields: [hostId], references: [id], onDelete: Cascade)
+    hostId      String  @db.VarChar(30)
+    timezone    String  @db.Text
+    status      STATUT? @default(PENDING)
+    description String  @db.Text
+    title       String  @db.Char(100)
+
+    guest   User   @relation("Guest", fields: [guestId], references: [id], onDelete: Cascade)
+    guestId String @db.VarChar(30)
+
+    @@map("meetings")
+}
+
+model Availability {
+    id        String @id @default(cuid()) @db.VarChar(30)
+    time_slot String @db.Char(10)
+    user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId    String @db.VarChar(30)
+
+    @@map("availabilities")
+}
+
+enum STATUT {
+    ACCEPTED
+    CANCELED
+    PENDING
+}
